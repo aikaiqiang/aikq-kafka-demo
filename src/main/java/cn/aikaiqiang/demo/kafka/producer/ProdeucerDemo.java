@@ -2,6 +2,7 @@ package cn.aikaiqiang.demo.kafka.producer;
 
 import org.apache.kafka.clients.producer.*;
 
+import java.util.ArrayList;
 import java.util.Properties;
 
 /**
@@ -28,9 +29,15 @@ public class ProdeucerDemo {
 		// 配置自定义分区
 		props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, "cn.aikaiqiang.demo.kafka.producer.CustomerPartitioner");
 
+		// 配置拦截器链: 按照添加拦截器的顺序创建
+		ArrayList<String> list = new ArrayList<>();
+		list.add("cn.aikaiqiang.demo.kafka.interceptor.TimeInterceptor");
+		list.add("cn.aikaiqiang.demo.kafka.interceptor.CountInterceptor");
+		props.put(ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, list);
+
 		Producer<String, String> producer = new KafkaProducer<>(props);
 		for (int i = 0; i < 10; i++){
-			producer.send(new ProducerRecord<String, String>(topic , "msg" + Integer.toString(i)), new Callback() {
+			producer.send(new ProducerRecord<String, String>(topic , "msg" + Integer.toString(i + 100)), new Callback() {
 				@Override
 				public void onCompletion(RecordMetadata metadata, Exception exception) {
 					if(exception == null){
@@ -43,7 +50,7 @@ public class ProdeucerDemo {
 			});
 		}
 
-		producer.flush();
+		producer.close();
 		System.out.println("----- end -----");
  	}
 }

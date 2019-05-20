@@ -8,6 +8,7 @@ import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
 import kafka.message.MessageAndOffset;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.*;
 
@@ -18,6 +19,8 @@ import java.util.*;
  * @date 2019年05月17日 14:00
  */
 public class LowerConsumerDemo {
+
+	public static final String ENCODING = "UTF-8";
 
 	private static List<Map<String, String>> brokerList;
 	public static final String topic = "my-first-topic";
@@ -42,7 +45,11 @@ public class LowerConsumerDemo {
 
 	public static void main(String[] args) {
 		LowerConsumerDemo lowerConsumerDemo = new LowerConsumerDemo();
-		lowerConsumerDemo.getDate(brokerList, topic, partition, offset);
+		try {
+			lowerConsumerDemo.getDate(brokerList, topic, partition, offset);
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
 	}
 
 
@@ -89,7 +96,8 @@ public class LowerConsumerDemo {
 	}
 
 
-	private void getDate(List<Map<String, String>> brokerList, String topic, int partition, long offset){
+	private void getDate(List<Map<String, String>> brokerList, String topic, int partition, long offset)
+			throws UnsupportedEncodingException {
 		// 获取分区 leader
 		BrokerEndPoint leader = findPartition(brokerList, topic, partition);
 		if(null == leader){
@@ -103,13 +111,13 @@ public class LowerConsumerDemo {
 		// 获取数据的消费者对象
 		SimpleConsumer getData = new SimpleConsumer(host, port, 1000, 1024 * 4, "getData");
 
-		// 创建获取数据的请求信息
-		FetchRequest fetchRequest = new FetchRequestBuilder().addFetch(topic, partition, offset, 50000).build();
+		// 创建获取数据的请求信息, 可添加多个 addFetch
+		FetchRequest fetchRequest = new FetchRequestBuilder().addFetch(topic, partition, offset, 500000).build();
 
 		// 获取数据返回对象
 		FetchResponse response = getData.fetch(fetchRequest);
 
-		// 解析返回值
+		// 解析返回值，此处指定 topic ，添加多个 addFetch 后会返回多个
 		ByteBufferMessageSet bufferMessageSet = response.messageSet(topic, partition);
 
 		// 遍历打印数据
@@ -118,7 +126,8 @@ public class LowerConsumerDemo {
 			// 保存 offset，便于下次开始消费
 			ByteBuffer payload = messageAndOffset.message().payload();
 			byte[] bytes = new byte[payload.limit()];
-			System.out.println(offset1 + "-" + new String(bytes));
+			payload.get(bytes);
+			System.out.println(offset1 + "-" + new String(bytes, ENCODING));
 		}
 	}
 }

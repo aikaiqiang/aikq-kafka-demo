@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false">
+    <!-- 区分不同应用程序的记录，默认为default -->
+	<contextName>kafka-demo</contextName>
+    <!-- 定义日志文件的存储地址 勿在 LogBack 的配置中使用相对路径 -->
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+    <!-- 获取application-xxx.yaml 中得值，由于logback-spring.xml加载早于application.yaml，故需要通过springProperty -->
+    <springProperty scope="context" name="logPath" source="magic.logger.log-path"/>
+
+    <!-- 定义日志文件的存储地址 windows 默认为开发环境, linux 为生产环境 -->
+    <if condition='p("os.name").contains("Windows")'>
+        <then>
+            <property name="LOG_PATH" value="c:/${logPath}" />
+        </then>
+        <else>
+            <property name="LOG_PATH" value="${logPath}" />
+        </else>
+    </if>
+	
+	<!-- 日志最大的历史 30天 -->
+    <property name="maxHistory" value="2" />
+    <!-- 日志最大文件大小 20M -->
+    <property name="maxFileSize" value="500KB" />
+
+	<!-- console appender -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <!-- [05-24 16:35:43] [DEBUG] [执行完毕SQL:(30ms) select count(t.*) from t(xxx::1=1 )] [PerformanceInterceptor.intercept.76] -->
+            <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%-5level] [%msg] [%logger{0}.%M.%L] \n</pattern>
+            <charset>utf-8</charset>
+        </encoder>
+    </appender>
+
+	<!-- debug appender -->
+    <appender name="DEBUGLEVEL" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 日志文件文件名及保存路径 -->
+        <file>${LOG_PATH}/debug.log</file>
+
+        <!-- 日志记录器的滚动策略，按日期记录 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 日志文件归档，%d{yyyy-MM-dd}为日期格式，存放目录进一步分类，并且每个文件最大为maxFileSize，超过时，自动切割文件 -->
+            <fileNamePattern>${LOG_PATH}/debug/debug-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!--日志保留时间-->
+            <maxHistory>${maxHistory}</maxHistory>
+            <!-- 日志达到一定大小后自动分割 -->
+            <maxFileSize>${maxFileSize}</maxFileSize>
+        </rollingPolicy>
+        <!-- 以追加的方式追加日志 -->
+        <append>true</append>
+        <!-- 日志格式 -->
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%-5level] [%msg] [%logger{0}.%M.%L] \n</pattern>
+            <charset>utf-8</charset>
+        </encoder>
+    </appender>
+
+	<!-- info appender -->
+    <appender name="INFOLEVEL" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 日志文件文件名及保存路径 -->
+        <file>${LOG_PATH}/info.log</file>
+        <!-- 日志记录器的滚动策略，按日期记录 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 日志文件归档，%d{yyyy-MM-dd}为日期格式，存放目录进一步分类 -->
+            <fileNamePattern>${LOG_PATH}/info/info-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!--日志保留时间-->
+            <maxHistory>${maxHistory}</maxHistory>
+            <!-- 日志达到一定大小后自动分割 -->
+            <maxFileSize>${maxFileSize}</maxFileSize>
+        </rollingPolicy>
+        <!-- 以追加的方式追加日志 -->
+        <append>true</append>
+        <!-- 日志格式 -->
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%-5level] [%msg] [%logger{0}.%M.%L] \n</pattern>
+            <charset>utf-8</charset>
+        </encoder>
+        <!-- 临界值过滤器，过滤掉低于指定临界值的日志 -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>info</level>
+        </filter>
+    </appender>
+    
+    <!-- error appender -->
+    <appender name="ERRORLEVEL" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 日志文件文件名及保存路径 -->
+        <file>${LOG_PATH}/error.log</file>
+        <!-- 日志记录器的滚动策略，按日期记录 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 日志文件归档，%d{yyyy-MM-dd}为日期格式，存放目录进一步分类 -->
+            <fileNamePattern>${LOG_PATH}/error/error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!--日志保留时间-->
+            <maxHistory>${maxHistory}</maxHistory>
+            <!-- 日志达到一定大小后自动分割 -->
+            <maxFileSize>${maxFileSize}</maxFileSize>
+        </rollingPolicy>
+        <!-- 以追加的方式追加日志 -->
+        <append>true</append>
+        <!-- 日志格式 -->
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%-5level] [%msg] [%logger{0}.%M.%L] \n</pattern>
+            <charset>utf-8</charset>
+        </encoder>
+        <!-- 临界值过滤器，过滤掉低于指定临界值的日志 -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>error</level>
+        </filter>
+    </appender>
+
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.apache.ibatis" level="WARN"/>
+    <logger name="org.mybatis.spring" level="WARN"/>
+    <logger name="net.sf.ehcache" level="WARN"/>
+    <logger name="org.quartz.core" level="WARN"/>
+    <logger name="org.apache.catalina" level="WARN"/>
+
+    <logger name="java.sql.Connection" level="WARN" />
+    <logger name="java.sql.Statement" level="WARN" />
+    <logger name="java.sql.PreparedStatement" level="WARN" />
+    <logger name="java.sql.ResultSet" level="WARN" />
+
+    <logger name="druid.sql" level="WARN"/>
+    <logger name="druid.sql.DataSource" level="WARN"/>
+    <logger name="druid.sql.Connection" level="WARN"/>
+    <logger name="druid.sql.Statement" level="WARN"/>
+    <logger name="druid.sql.PreparedStatement" level="WARN"/>
+    <logger name="druid.sql.ResultSet" level="WARN"/>
+
+    <logger name="com.alibaba.druid.pool.PreparedStatementPool" level="WARN"/>
+
+    <logger name="cn.hancloud.magic" level="INFO" />
+
+    <!-- 控制台打印资源加载信息 -->
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+        <appender-ref ref="DEBUGLEVEL" />
+        <appender-ref ref="ERRORLEVEL" />
+    </root>
+</configuration>
